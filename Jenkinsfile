@@ -47,7 +47,7 @@ pipeline {
                     jf 'rt ping'
 
                     // Create a file and upload it to a repository  in Artifactory
-                    jf "rt u target/myconstruction-0.0.1-SNAPSHOT.war eva5b-myconstruction/${BUILD_TAG}/"
+                    jf "rt u target/myconstruction-0.0.1-SNAPSHOT.war ${ARTIFACTORY_REPO}/${BUILD_TAG}/"
 
                     // Publish the build-info to Artifactory.
                     jf 'rt bp'
