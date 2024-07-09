@@ -11,7 +11,7 @@ pipeline {
     environment {
         ARTIFACTORY_URL = 'http://jfrog_artifactory_eva5:8082/artifactory'
         ARTIFACTORY_REPO = 'eva5b-myconstruction'
-        ARTIFACTORY_CREDS = credentials('jfrog-creds') // ID de las credenciales de Artifactory en Jenkins
+        ARTIFACTORY_CREDS = credentials('jfrog-cred') // ID de las credenciales de Artifactory en Jenkins
     }
 
     stages {
