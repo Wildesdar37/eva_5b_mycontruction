@@ -1,0 +1,99 @@
+
+
+volumes:
+  myconstruction_eva5_data: {}
+  myconstruction_eva5_jenkins: {}
+  myconstruction_eva5_jenkins_certs: {}
+  myconstruction_eva5_jfrog: {}
+  myconstruction_eva5_pgdata: {}
+
+services:
+  
+  myconstructioneva5:
+    build:
+      context: ./myconstruction
+      dockerfile: Dockerfile
+    ports:
+      - 8001:8001
+    volumes:
+      - ./myconstruction:/app:z
+    depends_on:
+      - mysql_eva5
+      - jenkins_eva5
+    env_file:
+      - .env
+    networks:
+      - myconstruction_eva5_network
+  
+  mysql_eva5:
+    image: mysql:8.4.0
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - myconstruction_eva5_data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - 3307:3306
+    networks:
+      - myconstruction_eva5_network
+  
+  jenkins_eva5:
+      build:
+        context: .
+        dockerfile: jenkins/Dockerfile
+      image: myconstruction_eva5_jenkins
+      container_name: myconstruction_eva5_jenkins
+      ports:
+        - 8080:8080
+        - 50000:50000
+      restart: on-failure
+      volumes:
+        - myconstruction_eva5_jenkins:/var/jenkins_home
+        - myconstruction_eva5_jenkins_certs:/certs/client:ro
+      environment:
+        - DOCKER_HOST=tcp://docker:2376
+        - DOCKER_CERT_PATH=/certs/client
+        - DOCKER_TLS_VERIFY=1
+      networks:
+        - myconstruction_eva5_network
+
+  postgres_eva5:
+    image: postgres:13
+    container_name: myconstruction_eva5_artifactory_postgres
+    environment:
+      POSTGRES_USER: artifactory
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: artifactory
+    volumes:
+      - myconstruction_eva5_pgdata:/var/lib/postgresql/data
+    networks:
+      - myconstruction_eva5_network
+
+  jfrog_artifactory_eva5:
+    image: releases-docker.jfrog.io/jfrog/artifactory-oss:7.77.5
+    ports:
+      - 8081:8081
+      - 8082:8082
+    container_name: myconstruction_eva5_jfrog_artifactory
+    environment:
+      - JAVA_OPTIONS=-Dartifactory.jdbc.driver=org.postgresql.Driver -Dartifactory.jdbc.url=jdbc:postgresql://artifactory_postgres:5432/artifactory -Dartifactory.jdbc.user=artifactory -Dartifactory.jdbc.password=password
+    depends_on:
+      - postgres_eva5
+    volumes:
+      - myconstruction_eva5_jfrog:/var/opt/jfrog/artifactory
+    restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000
+    networks:
+      - myconstruction_eva5_network
+
+networks:
+  myconstruction_eva5_network: {}
